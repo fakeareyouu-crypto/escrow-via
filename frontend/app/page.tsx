@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ProductCard, { Product } from "@/components/ProductCard";
+import { pickRelation } from "@/lib/relations";
 import { serverSupabase } from "@/lib/server-supabase";
 
 export const dynamic = "force-dynamic";
@@ -17,16 +18,20 @@ export default async function HomePage() {
         .limit(3)
     ]);
 
-  const products: Product[] = (latestProducts ?? []).map((item: any) => ({
-    id: item.id,
-    title: item.title,
-    description: item.description,
-    category: item.category,
-    price: Number(item.price),
-    imageUrl: item.images?.[0] ?? null,
-    sellerName: item.users?.username ?? "unknown",
-    sellerRating: Number(item.users?.rating ?? 5)
-  }));
+  const products: Product[] = (latestProducts ?? []).map((item: any) => {
+    const seller = pickRelation(item.users);
+
+    return {
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      category: item.category,
+      price: Number(item.price),
+      imageUrl: item.images?.[0] ?? null,
+      sellerName: seller?.username ?? "unknown",
+      sellerRating: Number(seller?.rating ?? 5)
+    };
+  });
 
   return (
     <section className="space-y-10">

@@ -1,4 +1,5 @@
 import ProductCard, { Product } from "@/components/ProductCard";
+import { pickRelation } from "@/lib/relations";
 import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ type ProductsResponse = {
     category: string | null;
     price: number;
     images: string[] | null;
-    users: { username: string; rating: number } | null;
+    users: { username: string; rating: number } | { username: string; rating: number }[] | null;
   }>;
 };
 
@@ -38,16 +39,20 @@ export default async function MarketplacePage({
     });
     if (response.ok) {
       const payload: ProductsResponse = await response.json();
-      products = (payload.products ?? []).map((item) => ({
-        id: item.id,
-        title: item.title,
-        description: item.description,
-        category: item.category,
-        price: Number(item.price),
-        imageUrl: item.images?.[0] ?? null,
-        sellerName: item.users?.username ?? "unknown",
-        sellerRating: Number(item.users?.rating ?? 5)
-      }));
+      products = (payload.products ?? []).map((item) => {
+        const seller = pickRelation(item.users as any);
+
+        return {
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          category: item.category,
+          price: Number(item.price),
+          imageUrl: item.images?.[0] ?? null,
+          sellerName: seller?.username ?? "unknown",
+          sellerRating: Number(seller?.rating ?? 5)
+        };
+      });
     }
   }
 

@@ -1,4 +1,5 @@
 import DealCard, { Deal } from "@/components/DealCard";
+import { pickRelation } from "@/lib/relations";
 import { serverSupabase } from "@/lib/server-supabase";
 
 export const dynamic = "force-dynamic";
@@ -20,13 +21,18 @@ export default async function DealsPage({ searchParams }: { searchParams: { user
     .order("created_at", { ascending: false })
     .limit(20);
 
-  const deals: Deal[] = (data ?? []).map((item: any) => ({
-    id: item.id,
-    amount: Number(item.amount),
-    status: item.status,
-    buyer: item.buyer?.username ?? "unknown",
-    seller: item.seller?.username ?? "unknown"
-  }));
+  const deals: Deal[] = (data ?? []).map((item: any) => {
+    const buyer = pickRelation(item.buyer);
+    const seller = pickRelation(item.seller);
+
+    return {
+      id: item.id,
+      amount: Number(item.amount),
+      status: item.status,
+      buyer: buyer?.username ?? "unknown",
+      seller: seller?.username ?? "unknown"
+    };
+  });
 
   return (
     <section className="space-y-6">

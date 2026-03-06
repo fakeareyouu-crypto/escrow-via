@@ -1,5 +1,6 @@
 import type { Route } from "next";
 import Link from "next/link";
+import { pickRelation } from "@/lib/relations";
 import { serverSupabase } from "@/lib/server-supabase";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,8 @@ export default async function ProductPage({ params }: { params: { id: string } }
     );
   }
 
+  const seller = pickRelation(product.users);
+
   return (
     <section className="grid gap-6 lg:grid-cols-2">
       <div className="card">
@@ -39,8 +42,8 @@ export default async function ProductPage({ params }: { params: { id: string } }
         <p className="text-sm text-slate-300">{product.description}</p>
         <p className="text-2xl font-semibold text-sky-300">${Number(product.price).toFixed(2)}</p>
         <div className="grid gap-2 text-sm text-slate-300">
-          <p>Seller: @{product.users?.username ?? "unknown"}</p>
-          <p>Seller rating: ★ {Number(product.users?.rating ?? 5).toFixed(1)}</p>
+          <p>Seller: @{seller?.username ?? "unknown"}</p>
+          <p>Seller rating: ★ {Number(seller?.rating ?? 5).toFixed(1)}</p>
           <p>Category: {product.category}</p>
           <p>Listed on: {new Date(product.created_at).toLocaleDateString()}</p>
         </div>
