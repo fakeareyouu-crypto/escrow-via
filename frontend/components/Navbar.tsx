@@ -15,7 +15,7 @@ export default function Navbar() {
         </Link>
         <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
           {links.map((item) => (
-            <Link key={item.href} className="hover:text-slate-900" href={item.href}>
+            <Link key={item.href} className="hover:text-slate-900" href={item.href as any}>
               {item.label}
             </Link>
           ))}
