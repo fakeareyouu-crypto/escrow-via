@@ -1,20 +1,22 @@
-const stats = [
-  { label: "Active deals", value: "3" },
-  { label: "Completed deals", value: "14" },
-  { label: "Open disputes", value: "1" }
-];
+import StatCard from "@/components/StatCard";
+import { serverSupabase } from "@/lib/server-supabase";
 
-export default function DashboardPage() {
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage() {
+  const [{ count: active }, { count: completed }, { count: disputes }] = await Promise.all([
+    serverSupabase.from("deals").select("id", { count: "exact", head: true }).neq("status", "completed"),
+    serverSupabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "completed"),
+    serverSupabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "disputed")
+  ]);
+
   return (
     <section className="space-y-6">
       <h1 className="page-title text-white">User Dashboard</h1>
       <div className="grid gap-4 sm:grid-cols-3">
-        {stats.map((stat) => (
-          <div key={stat.label} className="card">
-            <p className="text-sm text-slate-400">{stat.label}</p>
-            <p className="mt-2 text-2xl font-semibold text-white">{stat.value}</p>
-          </div>
-        ))}
+        <StatCard hint="status != completed" label="Active Deals" value={active ?? 0} />
+        <StatCard hint="status = completed" label="Completed Deals" value={completed ?? 0} />
+        <StatCard hint="status = disputed" label="Open Disputes" value={disputes ?? 0} />
       </div>
     </section>
   );
