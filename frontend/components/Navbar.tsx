@@ -1,11 +1,9 @@
 import Link from "next/link";
 
-const links = [
-  { href: "/marketplace", label: "Marketplace" },
-  { href: "/deals", label: "Deals" },
-  { href: "/seller", label: "Seller" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/admin", label: "Admin" }
+const links: { label: string; href: string }[] = [
+  { label: "Marketplace", href: "/marketplace" },
+  { label: "Deals", href: "/deals" },
+  { label: "Dashboard", href: "/dashboard" },
 ];
 
 export default function Navbar() {
