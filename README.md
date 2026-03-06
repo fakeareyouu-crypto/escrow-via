@@ -1,260 +1,449 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
-diff --git a/README.md b/README.md
-index cf8a97c9ba328dab052a1fe6d91c2c80d829945c..7cb3801e0b61ea51f6b3d621150a975f6b16af63 100644
---- a/README.md
-+++ b/README.md
-@@ -1 +1,249 @@
--# escrow-via
-\ No newline at end of file
-+# Escrovia
-+
-+Escrovia is a Telegram-focused escrow marketplace platform for secure digital product trading between buyers and sellers.
-+
-+It combines:
-+- **Public marketplace discovery** (catalogue + product pages)
-+- **Direct deal creation** for trades initiated outside the marketplace (for example in Telegram chats)
-+- **Escrow workflow** so funds are only released after buyer confirmation
-+- **Telegram bot notifications** for deal lifecycle updates
-+
-+Owner: **NAITIK**  
-+Developer: **NAITIK**
-+
-+---
-+
-+## Project Architecture
-+
-+```txt
-+escrovia/
-+├── frontend/
-+│   ├── app/
-+│   ├── components/
-+│   └── lib/
-+├── backend/
-+│   └── api/
-+├── bot/
-+├── database/
-+├── .env.example
-+├── package.json
-+└── README.md
-+```
-+
-+### Stack
-+- **Frontend:** Next.js (App Router), TailwindCSS, mobile-first responsive UI
-+- **Backend:** Node.js REST-style handlers, Supabase (Auth + PostgreSQL)
-+- **Notifications:** Telegram Bot API
-+- **Hosting:** Vercel (frontend + serverless API)
-+
-+---
-+
-+## Core User Roles
-+
-+### Buyer
-+- Browse marketplace catalogue
-+- Start escrow deals
-+- Fund escrow
-+- Confirm delivery
-+- Open disputes
-+
-+### Seller
-+- Create, update, delete listings
-+- Accept deals
-+- Deliver products
-+- Receive released funds
-+
-+### Admin
-+- View all deals and disputes
-+- Suspend users
-+- Monitor escrow transactions
-+
-+---
-+
-+## Feature Coverage in MVP Scaffold
-+
-+- Authentication pages (login/register UI)
-+- Public marketplace and product details pages
-+- Seller dashboard and product management pages
-+- Deals page with escrow timeline status indicator
-+- Direct deal creation route: `/deal/create?seller=username&amount=10`
-+- Public seller store page: `/store/[username]`
-+- Admin panel page
-+- Backend API handlers:
-+  - `createDeal`
-+  - `createProduct`
-+  - `releaseEscrow`
-+  - `getProducts`
-+- Telegram bot commands:
-+  - `/start`
-+  - `/deals`
-+  - `/notifications`
-+- SQL schema for users, products, deals, transactions
-+
-+---
-+
-+## Installation
-+
-+### 1) Clone repository
-+
-+```bash
-+git clone <your-repo-url>
-+cd escrow-via
-+```
-+
-+### 2) Install dependencies
-+
-+```bash
-+npm install
-+```
-+
-+### 3) Configure environment variables
-+
-+```bash
-+cp .env.example .env
-+```
-+
-+Fill `.env` values for Supabase and Telegram.
-+
-+---
-+
-+## Environment Variables
-+
-+| Variable | Required | Purpose |
-+|---|---|---|
-+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Browser client Supabase URL |
-+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Browser client Supabase anon key |
-+| `SUPABASE_URL` | Yes | Server-side Supabase URL |
-+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server-side privileged key |
-+| `TELEGRAM_BOT_TOKEN` | Yes | Telegram bot token from BotFather |
-+| `APP_URL` | Yes | Public app URL used by bot deep links |
-+
-+---
-+
-+## Database Setup (Supabase)
-+
-+1. Create a new Supabase project.
-+2. Open SQL editor.
-+3. Execute:
-+
-+```sql
-+-- Run entire file
-+database/schema.sql
-+```
-+
-+This creates:
-+- `users`
-+- `products`
-+- `deals`
-+- `transactions`
-+- `notifications_queue`
-+
-+### Recommended production additions
-+- Row Level Security (RLS) policies for each table
-+- Audit trail table for status transitions
-+- Idempotency keys for payment operations
-+- Webhook signature verification for payment provider events
-+
-+---
-+
-+## Running Locally
-+
-+### Start frontend
-+
-+```bash
-+npm run dev
-+```
-+
-+Default local URL: `http://localhost:3000`
-+
-+### Start Telegram bot (separate terminal)
-+
-+```bash
-+node bot/telegramBot.js
-+```
-+
-+---
-+
-+## API Endpoints (Backend Handlers)
-+
-+Current handlers are in `backend/api` and follow REST-style function signatures.
-+
-+- `GET /api/getProducts`
-+- `POST /api/createProduct`
-+- `POST /api/createDeal`
-+- `POST /api/releaseEscrow`
-+
-+> In Vercel deployment, map these to serverless functions or move them under Next.js route handlers (`frontend/app/api/*`).
-+
-+---
-+
-+## Escrow Deal Lifecycle
-+
-+1. Buyer starts deal (`pending`)
-+2. Seller accepts (`accepted`)
-+3. Buyer funds escrow (`escrow funded`)
-+4. Seller delivers (`delivered`)
-+5. Buyer confirms (`completed` + escrow release)
-+6. Optional exception path: `disputed`
-+
-+---
-+
-+## Telegram Bot Setup
-+
-+1. Open Telegram and create a bot via **@BotFather**.
-+2. Copy bot token into `.env` as `TELEGRAM_BOT_TOKEN`.
-+3. Ensure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set.
-+4. Run:
-+
-+```bash
-+node bot/telegramBot.js
-+```
-+
-+### Implemented commands
-+- `/start`: account-link prompt
-+- `/deals`: shows active deals for linked user
-+- `/notifications`: notification preference placeholder
-+
-+### Automatic notifications
-+Use `notifications_queue` plus a worker/cron to push deal event updates to users.
-+
-+---
-+
-+## Deploying to Vercel
-+
-+1. Push repository to GitHub.
-+2. Import project into Vercel.
-+3. Configure root project settings (or monorepo settings for `frontend`).
-+4. Add environment variables from `.env.example`.
-+5. Deploy.
-+
-+### Notes
-+- Ensure server-side keys are never exposed to the client bundle.
-+- For production, move API handlers to Vercel-compatible serverless paths if needed.
-+- Add monitoring/logging (e.g. Sentry + Vercel logs).
-+
-+---
-+
-+## Security and Scalability Notes
-+
-+- Validate all API payloads with schema validation (e.g. Zod)
-+- Enforce role-based access in API and RLS
-+- Implement signed webhooks for payment processor
-+- Use background jobs for bot notifications and retries
-+- Add rate limiting and anti-fraud checks
-+
-+---
-+
-+## Roadmap Extensions
-+
-+- Ratings/reviews system
-+- Internal wallet and balance ledger
-+- Evidence upload for disputes
-+- Reputation score and risk engine
-+- Multi-language support for Telegram-first users
-+
-+---
-+
-+## License
-+
-+Proprietary (update as needed).
- 
-EOF
-)
+# Escrovia
+
+**Escrovia** is a Telegram-focused escrow marketplace designed for secure digital trading between buyers and sellers.
+
+The platform combines a **public product marketplace** with a **secure escrow deal system** so payments are only released after buyers confirm delivery.
+
+Escrovia is built primarily for **Telegram-based trading communities**, where deals often start in chats but require a trusted escrow layer.
+
+Owner: **Naitik**
+Project: **Escrovia**
+
+---
+
+# Project Overview
+
+Escrovia acts as a **middle layer of trust** between buyers and sellers.
+
+Instead of sending money directly, buyers deposit funds into **escrow**, and the system releases payment only when the deal is successfully completed.
+
+Key capabilities:
+
+• Public marketplace catalogue
+• Seller storefront pages
+• Direct deal creation links
+• Escrow deal lifecycle tracking
+• Telegram bot notifications
+• Admin monitoring panel
+
+---
+
+# Project Structure
+
+```
+escrovia/
+│
+├── frontend/
+│   ├── app/
+│   ├── components/
+│   └── lib/
+│
+├── backend/
+│   └── api/
+│
+├── bot/
+│
+├── database/
+│
+├── .env.example
+├── package.json
+└── README.md
+```
+
+---
+
+# Technology Stack
+
+Frontend
+
+* Next.js (App Router)
+* TailwindCSS
+* Responsive mobile-first UI
+
+Backend
+
+* Node.js API handlers
+* Supabase (Authentication + PostgreSQL)
+
+Notifications
+
+* Telegram Bot API
+
+Hosting
+
+* Vercel
+
+---
+
+# User Roles
+
+## Buyer
+
+Buyers can:
+
+* Browse marketplace catalogue
+* Start escrow deals
+* Fund escrow payments
+* Confirm delivery
+* Open disputes if needed
+
+---
+
+## Seller
+
+Sellers can:
+
+* Create product listings
+* Edit and manage products
+* Accept buyer deals
+* Deliver digital goods
+* Receive released escrow payments
+
+---
+
+## Admin
+
+Admins can:
+
+* Monitor all deals
+* Review disputes
+* Suspend fraudulent users
+* Track transaction history
+
+---
+
+# Core Features
+
+## Public Marketplace
+
+Anyone can browse available listings.
+
+Marketplace includes:
+
+* Product cards
+* Seller information
+* Pricing
+* Start deal button
+
+Product page route:
+
+```
+/product/[id]
+```
+
+---
+
+## Seller Store Pages
+
+Each seller has a public storefront.
+
+Example:
+
+```
+/store/username
+```
+
+This page shows:
+
+* Seller profile
+* Seller rating
+* All listed products
+
+---
+
+## Direct Deal Creation
+
+Deals can also be created **outside the marketplace**.
+
+Example use case:
+
+Buyer and seller negotiate in Telegram chat, then open a deal using:
+
+```
+/deal/create?seller=username&amount=10
+```
+
+This creates a deal without needing a product listing.
+
+---
+
+# Escrow Workflow
+
+Escrovia follows a clear deal lifecycle.
+
+1. Buyer starts deal → `pending`
+
+2. Seller accepts deal → `accepted`
+
+3. Buyer funds escrow → `escrow_funded`
+
+4. Seller delivers product → `delivered`
+
+5. Buyer confirms delivery → `completed`
+
+6. Escrow payment is released to seller.
+
+Exception path:
+
+`disputed`
+
+---
+
+# Telegram Bot Integration
+
+Escrovia uses a Telegram bot to notify users about deal activity.
+
+Notifications include:
+
+• New deal created
+• Deal accepted
+• Escrow funded
+• Product delivered
+• Payment released
+
+---
+
+## Telegram Commands
+
+```
+/start
+```
+
+Links Telegram account with Escrovia.
+
+```
+/deals
+```
+
+Shows active deals.
+
+```
+/notifications
+```
+
+Manage notification settings.
+
+---
+
+# Database Schema
+
+Main tables:
+
+Users
+
+```
+users
+- id
+- username
+- email
+- role
+- telegram_id
+- rating
+- created_at
+```
+
+Products
+
+```
+products
+- id
+- seller_id
+- title
+- description
+- category
+- price
+- images
+- created_at
+```
+
+Deals
+
+```
+deals
+- id
+- buyer_id
+- seller_id
+- product_id
+- amount
+- status
+- created_at
+```
+
+Transactions
+
+```
+transactions
+- id
+- deal_id
+- amount
+- status
+- created_at
+```
+
+---
+
+# Environment Variables
+
+Create `.env` from `.env.example`.
+
+Required variables:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+
+TELEGRAM_BOT_TOKEN=
+
+APP_URL=
+```
+
+---
+
+# Installation
+
+Clone repository
+
+```
+git clone <your-repository-url>
+cd escrovia
+```
+
+Install dependencies
+
+```
+npm install
+```
+
+Create environment file
+
+```
+cp .env.example .env
+```
+
+Add your Supabase and Telegram credentials.
+
+---
+
+# Database Setup
+
+Create a project in Supabase.
+
+Open SQL Editor and run:
+
+```
+database/schema.sql
+```
+
+This will create required tables.
+
+Recommended production improvements:
+
+* Row Level Security policies
+* Audit logs
+* Payment idempotency protection
+* Webhook verification
+
+---
+
+# Running Locally
+
+Start development server
+
+```
+npm run dev
+```
+
+Local site:
+
+```
+http://localhost:3000
+```
+
+---
+
+Start Telegram bot (separate terminal):
+
+```
+node bot/telegramBot.js
+```
+
+---
+
+# Backend API Endpoints
+
+Available API handlers:
+
+```
+GET  /api/getProducts
+POST /api/createProduct
+POST /api/createDeal
+POST /api/releaseEscrow
+```
+
+These functions live inside:
+
+```
+backend/api
+```
+
+For production deployment they can be moved into Next.js API routes.
+
+---
+
+# Deployment
+
+Recommended deployment platform:
+
+Vercel
+
+Steps:
+
+1. Push project to GitHub
+2. Import repository in Vercel
+3. Configure environment variables
+4. Deploy
+
+---
+
+# Security Recommendations
+
+For production use:
+
+* Enable Supabase Row Level Security
+* Validate API payloads
+* Add rate limiting
+* Implement anti-fraud checks
+* Protect payment webhooks
+* Use server-side logging
+
+---
+
+# Future Roadmap
+
+Potential upgrades:
+
+• Ratings and review system
+• Internal wallet system
+• Dispute evidence uploads
+• Seller reputation scoring
+• Multi-language support
+• Crypto payment support
+
+---
+
+# License
+
+This project is currently proprietary.
+
+License terms may be updated in future releases.
+
+---
+
+# Final Notes
+
+Escrovia aims to become a **trusted escrow infrastructure for Telegram-based digital trading communities**.
+
+The current version provides a solid MVP foundation and can be expanded with payment integrations, wallet systems, and advanced dispute resolution features.
